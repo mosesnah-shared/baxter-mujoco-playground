@@ -1,10 +1,12 @@
 import cv2
 
 
+
+
 # define a video capture object
 vid = cv2.VideoCapture(0)
 
-while(True):
+while( True ):
 
     # Capture the video frame
     # by frame
