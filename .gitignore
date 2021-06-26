@@ -14,7 +14,8 @@ results
 
 
 # Stuffs related to virtual environment.
-*lib*
+lib
+lib64
 *bin*
 *include*
 *.cfg
@@ -29,6 +30,6 @@ latex
 jpg
 *.m~
 *.pyc
-*.asv 
+*.asv
 *.mp4
 *.sh

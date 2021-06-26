@@ -1,10 +1,16 @@
 import cv2
-
-
+import pickle
 
 
 # define a video capture object
 vid = cv2.VideoCapture(0)
+
+with open( "cam_vars.pkl",'rb') as file_object:
+    raw_data = file_object.read()
+
+raw_data = pickle.loads( raw_data ) # deserialization
+
+mtx, dist, optimal_camera_matrix = raw_data
 
 while( True ):
 
@@ -12,13 +18,12 @@ while( True ):
     # by frame
     ret, frame = vid.read()
 
+    # Undistort the image
+    undistorted_image = cv2.undistort( frame, mtx, dist, None, optimal_camera_matrix )
+
     # Display the resulting frame
-    cv2.imshow('frame', frame)
+    cv2.imshow('frame', undistorted_image)
 
-
-      # Undistort the image
-      undistorted_image = cv2.undistort(distorted_image, mtx, dist, None,
-                                        optimal_camera_matrix)
 
     # the 'q' button is set as the
     # quitting button you may use any
