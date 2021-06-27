@@ -6,8 +6,6 @@ Baxter robot in MuJoCo
 
 - [MuJoCo forum thread which provided the `.xml` Model file](http://mujoco.org/forum/index.php?threads/commanding-to-a-joint-angle-configuration.3520/)
 
-
----
 # Camera Calibration
 The camera should be calibrated before the usage. Most of the source codes are saved in [openCV](./openCV) directory.
 
