@@ -1,32 +1,45 @@
 import cv2
+import argparse
+import pickle
 
 
+parser = argparse.ArgumentParser()
 
+parser.add_argument("-c", "--calibrated", help = "turn on calibration", action = 'store_true')
+args   = parser.parse_args()
 
-# define a video capture object
 vid = cv2.VideoCapture(0)
+
+if args.calibrated:
+    f_name = "cam_vars.pkl"
+    with open( f_name, 'rb' ) as file_object:
+        raw_data = file_object.read( )
+
+    raw_data = pickle.loads( raw_data ) # deserialization
+    mtx, dist, optimal_camera_matrix, roi = raw_data
 
 while( True ):
 
-    # Capture the video frame
-    # by frame
+    # Capture the video frame-by-frame
     ret, frame = vid.read()
 
-    # Display the resulting frame
-    cv2.imshow('frame', frame)
+    if args.calibrated:
+        # Undistort the image
+        undistorted_image = cv2.undistort( frame, mtx, dist, None, optimal_camera_matrix )
 
+        # Crop the image. Uncomment these two lines to remove black lines
+        # on the edge of the undistorted image.
+        x, y, w, h  = roi
+        frame       = undistorted_image[y:y+h, x:x+w]                           # Rewriting the frame
 
-      # Undistort the image
-      undistorted_image = cv2.undistort(distorted_image, mtx, dist, None,
-                                        optimal_camera_matrix)
+    cv2.imshow('frame', frame)                                                  # Display the resulting frame
 
-    # the 'q' button is set as the
-    # quitting button you may use any
-    # desired button of your choice
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    k = cv2.waitKey( 1 )                    # Wait for 1ms and get the key input
+
+                                            # [BACKUP] ord('q'):
+    if k%256 == 27:                         # If (ESC) key is given, stop the video
+        print( "ESC inputted, Close Camera!" )
         break
 
-# After the loop release the cap object
 vid.release()
-# Destroy all the windows
 cv2.destroyAllWindows()
