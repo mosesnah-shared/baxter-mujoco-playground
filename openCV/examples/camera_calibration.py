@@ -98,7 +98,7 @@ def main():
 
   # Saving the objects:
   with open( 'cam_vars.pkl', 'wb' ) as f:  # Python 3: open(..., 'wb')
-      pickle.dump( [ mtx, dist, optimal_camera_matrix ], f )
+      pickle.dump( [ mtx, dist, optimal_camera_matrix, roi ], f )
 
   # Close all windows
   cv2.destroyAllWindows()
