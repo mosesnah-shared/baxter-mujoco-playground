@@ -1,32 +1,25 @@
 import cv2
 
-
-
-
-# define a video capture object
 vid = cv2.VideoCapture(0)
 
 while( True ):
 
-    # Capture the video frame
-    # by frame
+    # Capture the video frame-by-frame
     ret, frame = vid.read()
 
     # Display the resulting frame
     cv2.imshow('frame', frame)
 
 
-      # Undistort the image
-      undistorted_image = cv2.undistort(distorted_image, mtx, dist, None,
-                                        optimal_camera_matrix)
+    # Undistort the image
+    #undistorted_image = cv2.undistort(distorted_image, mtx, dist, None,
+    #                                    optimal_camera_matrix)
 
-    # the 'q' button is set as the
-    # quitting button you may use any
-    # desired button of your choice
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    k = cv2.waitKey( 1 )                    # Wait for 1ms and get the key input
+    
+    if k%256 == 27:                         # If (ESC) key is given, stop the video
+        print( "ESC inputted, Close Camera!" )
         break
 
-# After the loop release the cap object
-vid.release()
-# Destroy all the windows
+vid.release() 
 cv2.destroyAllWindows()
