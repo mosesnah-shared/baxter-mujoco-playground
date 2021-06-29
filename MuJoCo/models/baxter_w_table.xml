@@ -363,37 +363,37 @@
 
 
         <!-- Table -->
-        <!-- <body name="top" pos="0.6 0.0 -0.05">
-            <geom name="top" rgba="0.8 0.8 0.8 1" material="tabletop1" type="box" size="0.2 0.5 0.02" contype="2" conaffinity="2" /> -->
+        <body name="top" pos="0.6 0.0 -0.05">
+            <geom name="top" rgba="0.8 0.8 0.8 1" material="tabletop1" type="box" size="0.2 0.5 0.02" contype="2" conaffinity="2" />
 
             <!-- leg 1 -->
-            <!-- <body name="leg1" pos="0.19 0.49 -0.35">
+            <body name="leg1" pos="0.19 0.49 -0.35">
                 <geom name="leg1" rgba="0.2 0.2 0.2 1" type="box" size="0.01 0.01 0.35" contype="2" conaffinity="2" />
-            </body> -->
+            </body>
 
             <!-- leg 2 -->
-            <!-- <body name="leg2" pos="0.19 -0.49 -0.35">
+            <body name="leg2" pos="0.19 -0.49 -0.35">
                 <geom name="leg2" rgba="0.2 0.2 0.2 2" type="box" size="0.01 0.01 0.35" contype="2" conaffinity="2" />
-            </body> -->
+            </body>
 
             <!-- leg 3 -->
-            <!-- <body name="leg3" pos="-0.19 0.49 -0.35">
+            <body name="leg3" pos="-0.19 0.49 -0.35">
                 <geom name="leg3" rgba="0.2 0.2 0.2 3" type="box" size="0.01 0.01 0.35" contype="3" conaffinity="3" />
-            </body> -->
+            </body>
 
             <!-- leg 4 -->
-            <!-- <body name="leg4" pos="-0.19 -0.49 -0.35">
+            <body name="leg4" pos="-0.19 -0.49 -0.35">
                 <geom name="leg4" rgba="0.2 0.2 0.2 4" type="box" size="0.01 0.01 0.35" contype="4" conaffinity="4" />
-            </body> -->
+            </body>
 
-        <!-- </body> -->
+        </body>
 
         <!-- box -->
-        <!-- <body name="box" pos="0.6 0.0 0.0">
+        <body name="box" pos="0.6 0.0 0.0">
             <geom name="box" type="box"  rgba="1.0 0.0 0.0 1" size="0.03 0.03 0.03" contype="2" conaffinity="2" />
             <site name="box" pos="0.0 0.0 0" rgba="0 0 1 1" size="0.035 0.035 0.035"/>
             <joint name="box" type="free" limited="false"/>
-        </body> -->
+        </body>
 
 
         <!-- spring -->
