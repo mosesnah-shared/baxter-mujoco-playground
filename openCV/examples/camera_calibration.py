@@ -37,6 +37,7 @@ object_points_3D[ :, :2 ] = np.mgrid[ 0:nY, 0:nX ].T.reshape( -1, 2 )
 def main():
 
   images = glob.glob( PATH + 'opencv_*.png' )                                          # Get the file path for images in the current directory
+  cnt    = 0
 
   for image_file in images:                                                     # Go through each chessboard image, one by one
 
@@ -55,8 +56,13 @@ def main():
 
       # [DEBUG] [Moses C. Nah] [2021.06.29]
       # Display the window for a short period. Used for testing.
-      #cv2.imshow( "Image", image )
-      #cv2.waitKey( 1000 )
+      cv2.imshow( "Image", image )
+      cv2.waitKey( 1000 )
+
+      # Save the files
+      img_name = "pic_{}.png".format( cnt )
+      cv2.imwrite( img_name, image )
+      cnt += 1
 
   # Now take a distorted image and undistort it
   distorted_image = cv2.imread( distorted_img_filename )
