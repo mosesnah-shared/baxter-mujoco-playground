@@ -163,7 +163,7 @@ def main( ):
     # ============================================================================= #
     # (1A) [GENERATE MODEL]
 
-    model_name = args[ 'modelName' ]
+    model_name = "baxter.xml"
     my_print( modelName = model_name )
 
     # ============================================================================= #
@@ -181,7 +181,10 @@ def main( ):
     ctrl = NullController( mySim.mjModel, mySim.mjData, args )
     mySim.attach_controller( ctrl )
 
+
     val = mySim.run( )                # Getting the minimum distance between tip and target
+
+
 
 
     if args[ 'saveDir' ] is not None:
