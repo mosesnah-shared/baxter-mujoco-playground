@@ -108,6 +108,20 @@ class Simulation( ):
 
         self.VISUALIZE = is_visualize                                           # saving the VISUALIZE Flag
 
+    def read_data( self ):
+        data_txt = "data/speed_joint_origin.txt"
+
+        f = open( data_txt, "r" )
+        self.data = str2float( f.readline( ) )
+
+        while True:
+            tmp = str2float( f.readline( ) )
+            if not tmp:
+                break
+            else:
+                self.data = np.vstack( ( self.data, tmp ) )
+
+
     def attach_model( self, model_name ):
 
         if self.mjModel is not None:
@@ -136,64 +150,6 @@ class Simulation( ):
         """
 
         self.obj_func = obj_func
-
-
-    def run_nlopt_optimization( self, input_pars = "mov_parameters", idx = 1, lb = None, ub = None, max_iter = 600 ):
-        """
-            Running the optimization, using the nlopt library
-        """
-
-        tmp_file = open( self.args[ 'saveDir' ] + "optimization_log.txt", "w+" )    # The txt file for saving all the iteration information
-
-        # First check if there exist an output function
-        if self.obj_func is None:
-            raise ValueError( "Optimization cannot be executed due to the vacancy of output scalar function" )
-
-        # Find the input parameters (input_pars) that are aimed to be optimized
-        # Possible options (written in integer values) are as follows
-        # [REF] https://nlopt.readthedocs.io/en/latest/NLopt_Algorithms/
-        idx_opt = [ nlopt.GN_DIRECT_L, nlopt.GN_DIRECT_L_RAND, nlopt.GN_DIRECT, nlopt.GN_CRS2_LM, nlopt.GN_ESCH  ]
-        self.algorithm = idx_opt[ idx ]                                             # Selecting the algorithm to be executed
-
-        if input_pars not in self.controller.ctrl_par_names:
-            raise ValueError( "The input parameters {0:s} is not defined or found in the ctrl parameter names in the controller. \
-                               Possible options are '{1:s}'".format( input_pars, ", ".join( self.ctrl_input.ctrl_par_names )  ) )
-
-        idx = [ i for i, elem in enumerate( self.controller.ctrl_par_names ) if input_pars == elem ][ 0 ]
-
-        self.n_opt = self.controller.n_ctrl_pars[ idx ]                         # Getting the dimension of the input vector, i.e.,  the number of parameters that are aimed to be optimized
-        self.opt   = nlopt.opt( self.algorithm, self.n_opt )                    # Defining the class for optimization
-
-        self.opt.set_lower_bounds( lb )                                         # Setting the upper/lower bound of the optimization
-        self.opt.set_upper_bounds( ub )                                         # Setting the upper/lower bound of the optimization
-        self.opt.set_maxeval( max_iter )                                        # Running 600 (N) iterations for the simulation.
-
-        init = ( lb + ub ) * 0.5 + 0.05 * lb                                    # Setting an arbitrary non-zero initial step
-
-        self.opt.set_initial_step( init )
-
-
-        def nlopt_obj_func( pars, grad ):                                       # Defining the objective function that we are aimed to optimize.
-
-            setattr( self.controller, input_pars, pars )                        # Setting the input parameters directory
-            val = self.run( )                                                   # Running a single simulation and get the minimum distance achieved
-
-            self.reset( )
-
-            my_print( Iter = self.opt.get_numevals( ) + 1, inputPars = pars, output = val )                     # Printing the values onto the screen
-            my_print( Iter = self.opt.get_numevals( ) + 1, inputPars = pars, output = val, file = tmp_file )    # Printing the values onto the txt file
-
-            return val
-
-
-        self.opt.set_min_objective( nlopt_obj_func )
-        self.xopt = self.opt.optimize( ( ub + lb ) * 0.5 )                      # Start at the mid-point of the lower and upper bound
-
-        my_print(  optimalInput = self.xopt[ : ],
-                  optimalOutput = self.opt.last_optimum_value( ) )              # At end, printing out the optimal values and its corresponding movement parameters
-
-        tmp_file.close()
-
 
     def run( self ):
         """
@@ -230,6 +186,10 @@ class Simulation( ):
             self.mjViewer.cam.elevation     = tmp[ 4 ]
             self.mjViewer.cam.azimuth       = tmp[ 5 ]
 
+        # self.read_data()
+
+        # N = self.data.shape[ 0 ]
+
         while self.current_time <= self.run_time:
 
             if self.sim_step % self.update_rate == 0:
@@ -258,7 +218,7 @@ class Simulation( ):
             #     input_ref[ input_idx ] = input
 
 
-            self.mjSim.step( )                                                  # Single step update
+            # self.mjSim.step( )                                                  # Single step update
 
             if( self.is_sim_unstable() ):                                       # Check if simulation is stable
 
@@ -269,29 +229,40 @@ class Simulation( ):
 
                 break
 
+            for j_names in Constants.LEFT_JOINT_NAME:
+                idx = self.mjModel.joint_name2id( j_names )
+                self.mjData.qpos[ idx ] = Constants.GRASP_POSTURE_LEFT[ j_names ]
+
+            for j_names in Constants.RIGHT_JOINT_NAME:
+                idx = self.mjModel.joint_name2id( j_names )
+                self.mjData.qpos[ idx ] = Constants.GRASP_POSTURE_RIGHT[ j_names ]
+
+            self.mjSim.forward( )    
+
             self.current_time = self.mjData.time                                # Update the current_time variable of the simulation
+
 
 
             # Calculate objective value based on mujoco Data
             # if self.obj_func is not None:
             #     self.min_val = min( self.min_val, self.obj_func( self.mjModel, self.mjData )  )
 
-            if self.sim_step % self.update_rate == 0:
+            # if self.sim_step % self.update_rate == 0:
 
-                if self.args[ 'saveData' ]:
-                    # Saving all the necessary datas for the simulation
-                    # my_print(  inputVal = input,
-                    #             minVal  = self.min_val,
-                    #                ZFT  = self.controller.phi,
-                    #                dZFT = self.controller.dphi,
-                    #                file = file )
-
-                # elif self.args[ 'runOptimization' ]:
-
-                    my_print(  geomXYZPositions  = self.mjData.geom_xpos[ self.idx_geom_names ],
-                               geomXYZVelocities = self.mjData.geom_xvelp[ self.idx_geom_names ],
-                                      outputVal  = self.obj_func( self.mjModel, self.mjData ),
-                                       inputVal  = input,file = file  )
+                # if self.args[ 'saveData' ]:
+                #     # Saving all the necessary datas for the simulation
+                #     # my_print(  inputVal = input,
+                #     #             minVal  = self.min_val,
+                #     #                ZFT  = self.controller.phi,
+                #     #                dZFT = self.controller.dphi,
+                #     #                file = file )
+                #
+                # # elif self.args[ 'runOptimization' ]:
+                #
+                #     my_print(  geomXYZPositions  = self.mjData.geom_xpos[ self.idx_geom_names ],
+                #                geomXYZVelocities = self.mjData.geom_xvelp[ self.idx_geom_names ],
+                #                       outputVal  = self.obj_func( self.mjModel, self.mjData ),
+                #                        inputVal  = input,file = file  )
 
 
 
