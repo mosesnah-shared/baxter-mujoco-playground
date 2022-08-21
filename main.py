@@ -53,30 +53,38 @@ parser.add_argument( '--vid_off'     , action = 'store_true'  ,                 
 # [REF] https://stackoverflow.com/questions/48796169/how-to-fix-ipykernel-launcher-py-error-unrecognized-arguments-in-jupyter
 args, unknown = parser.parse_known_args( )
 
-def run_single_trial( mj_sim, mov_pars: dict, init_cond: dict ):
+def run_single_trial( mj_sim ):
     """
         A function for running a single trial of simulation and return an array of the objective value of the simulation. 
     """
 
-    mj_sim.ctrl.set_traj( mov_pars = mov_pars )    
-    mj_sim.initialize( qpos = init_cond[ "qpos" ], qvel = init_cond[ "qvel" ] )
+    mj_sim.initialize( which_arm = "right", qpos = dict2arr( "right", C.GRASP_POSE ), qvel = np.zeros( 7 ) )
+
+    # mj_sim.initialize( which_arm = "left", qpos = C.GRASP_POSE, qvel = np.zeros( 7 ) )
 
     # Run the simulation
     mj_sim.run( )
-
-    # Return the value of the simulation's objective value 
-    return mj_sim.obj_arr 
-
 
 
 if __name__ == "__main__":
 
     # Generate an instance of our Simulation
     my_sim = Simulation( args )
+    
 
     # Instance for the controller of the simulation
     if   args.ctrl_name == "joint_imp_ctrl": 
-        ctrl = JointImpedanceController( my_sim.mj_model, my_sim.mj_data, args, t_start = args.start_time )
+        
+        # The RIGHT LIMB Impedances
+        imp1_R = JointImpedanceController( my_sim, args, which_arm = "right" )
+        
+        Kq_mat = 10 * np.eye( 7 )
+        Bq_mat = 0.6 * Kq_mat
+        
+        imp1_R.set_impedance( Kq = Kq_mat, Bq = Bq_mat )
+        imp1_R.add_movement( q0i = dict2arr( "right", C.GRASP_POSE ), q0f = dict2arr( "right", C.MID_POSE ), D = 3, ti = 1.0 )        
+
+        my_sim.add_ctrl( imp1_R )
 
     elif args.ctrl_name == "task_imp_ctrl":
         pass
@@ -84,19 +92,7 @@ if __name__ == "__main__":
     else:
         raise ValueError( f"[ERROR] Wrong controller name" )
 
-
-    # Setup the controller and objective of the simulation
-    my_sim.set_ctrl( ctrl )
-
-
-    n = my_sim.ctrl.n_act   
-
-    mov_pars  = {  "q0i": mov_arrs[ :n ] ,   "q0f": mov_arrs[ n: 2*n ] ,  "D": mov_arrs[ -1 ]  } 
-    init_cond = { "qpos": mov_arrs[ :n ] ,  "qvel": np.zeros( my_sim.ctrl.n_act ) }
-
-
-    obj_arr = run_single_trial( my_sim,  mov_pars = mov_pars, init_cond = init_cond )
-    print( f"The minimum value of this trial is { min(obj_arr):.5f}" )
-
+    run_single_trial( my_sim )
+    
     my_sim.close( )
 

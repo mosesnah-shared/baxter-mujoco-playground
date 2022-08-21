@@ -23,7 +23,7 @@
 
 <mujoco model="baxter(v1.31)">
     <compiler coordinate="local" angle="radian" meshdir="meshes/" texturedir="texture/" strippath="false" />
-    <option gravity="0 0 0"/>
+    <option gravity="0 0 0" collision='predefined' timestep='0.001' integrator='Euler'/>
     <size njmax="795" nconmax="250" nstack="631875" />
 
    <asset>
@@ -66,12 +66,13 @@
 
    <default>
 		<geom margin="0.001"/>
-        <joint limited="true" damping="10" armature=".01"/>
+        <joint limited="true" />
 		<default class="viz">
 			<geom contype="0" conaffinity="0" group="1" type="mesh"/>
 		</default>
    </default>
 
+<!-- 
    <contact>
         <exclude body1="right_upper_shoulder" body2="torso"/>
 		<exclude body1="right_upper_shoulder" body2="right_upper_elbow"/>
@@ -85,7 +86,7 @@
 		<exclude body1="collision_head_link_2" body2="torso"/>
 		<exclude body1="r_gripper_r_finger" body2="r_gripper_l_finger"/>
 		<exclude body1="l_gripper_r_finger" body2="l_gripper_l_finger"/>
-    </contact>
+    </contact> -->
 
     <worldbody>
         <light directional="false" castshadow="false" cutoff="90" exponent="1" diffuse="1 1 1" specular="0 0 0" pos="1 0 1.5" dir="-1 0 -2.5"/>
@@ -210,7 +211,7 @@
                                                         <!--<body name="right_gripper" pos="0 0 0.1327">
                                                             <inertial pos="0 0 0" mass="0.0001" diaginertia="0 0 0" />
                                                         </body>-->
-                                                        <site name='right_gripper_end_site' pos="0 0 0.025">
+                                                        <site name='right_gripper_end_site' pos="0 0 0.025" />
 
                                                         <body name="r_gripper_l_finger" pos="0 -0.0015 0.02">
 
@@ -315,7 +316,7 @@
                                                         <inertial pos="0 0 0" quat="-0.5 0.5 0.5 0.5" mass="0.3" diaginertia="3e-08 2e-08 2e-08" />
                                                         <geom quat="0 0 0.707107 0.707107" class="viz" mesh="electric_gripper_base" />
                                                         <geom size="0.029 0.05" quat="0 0 0.707107 0.707107" type="cylinder" />
-                                                        <site name='left_gripper_end_site' pos="0 0 0.025">
+                                                        <site name='left_gripper_end_site' pos="0 0 0.025" />
                                                         
                                                         <body name="l_gripper_l_finger" pos="0 -0.0015 0.02">
 
