@@ -53,6 +53,39 @@ class Controller:
         
         return np.array( [ self.mj_data.get_joint_qvel( joint ) for joint in C.JOINT_NAMES[ self.which_arm ]  ] )
 
+    def get_end_effector_pos( self ):
+        """
+            Return a (1 x 3) array with the RIGHT/LEFT LIMB's joint posture
+        """
+        
+        return self.mj_data.get_body_xpos( self.which_arm + "_hand" ) 
+
+    def get_end_effector_lin_vel( self ):
+        """
+            Return a (1 x 3) array with the RIGHT/LEFT LIMB's joint posture
+        """
+
+        return self.mj_data.get_body_xvelp( self.which_arm + "_hand" ) 
+
+    def get_end_effector_rot_vel( self ):
+        """
+            Return a (1 x 3) array with the RIGHT/LEFT LIMB's joint posture
+        """
+        
+        return self.mj_data.get_body_xvelr( self.which_arm + "_hand" ) 
+
+    def get_end_effector_lin_jacobian( self ):
+        
+        J_tmp = self.mj_data.get_body_jacp( self.which_arm + "_hand" ).reshape( 3, -1 )
+
+        return J_tmp[ :, self.mj_sim.idx_joints[ self.which_arm ] ]
+
+    def get_end_effector_lin_jacobian( self ):
+        
+        J_tmp = self.mj_data.get_body_jacr( self.which_arm + "_hand" ).reshape( 3, -1 )
+
+        return J_tmp[ :, self.mj_sim.idx_joints[ self.which_arm ] ]
+
 class JointImpedanceController( Controller ):
 
     """
@@ -82,9 +115,6 @@ class JointImpedanceController( Controller ):
         # The movement parameters that we need to save
         self.Kq, self.Bq = [], []
         self.q0i, self.q0f, self.D, self.ti = [], [], [], []
-
-        # Saving the joint index for the controllers
-        self.idx_ctrl = np.array( [ self.mj_model.actuator_name2id( j ) for j in C.ACT_NAMES[ "right" ] ] )
 
         # The number of movements 
         self.n_mov = 0 
@@ -181,8 +211,7 @@ class JointImpedanceController( Controller ):
 
         self.tau = self.Kq @ ( self.q0 - self.q ) + self.Bq @ ( self.dq0 - self.dq )
  
-        # The  (1) object         (2) index array       (3) It's value. 
-        return self.mj_data.ctrl, self.idx_ctrl,        self.tau
+        return self.tau
 
     def save_data( self ):
         NotImplementedError( )
@@ -197,59 +226,137 @@ class JointImpedanceController( Controller ):
 
         self.n_act = 0 
 
-class CartesianImpedanceController( Controller ):
+class CartesianPositionImpedanceController( Controller ):
+    """
+        The Controller which only accounts for the 3D position
+    """
+    def __init__( self, mj_sim, mj_args, which_arm:str ):
 
-    def __init__( self, mj_model, mj_data, mj_args, t_start: float = 0 ):
+        # Choose which arm we will use for Baxter
+        assert which_arm in [ "right", "left" ]
 
-        super( ).__init__( mj_model, mj_data, mj_args, t_start )
+        super( ).__init__( mj_sim, mj_args, which_arm )
 
-        # Getting the number of actuators 
-        self.n_act = len( self.mj_model.actuator_names )
+        # The number of actuators for each arm is 7
+        self.n_act = 7
 
-        # Define the controller parameters that we can change via "set_ctr_par" method
-        self.ctrl_par_names = [ "Kx", "Bx", "x0i", "x0f", "D" ]       
+        # The movement parameters that we need to save
+        self.Kx, self.Bx = [], []
+        self.x0i, self.x0f, self.D, self.ti = [], [], [], []
 
-        # Define the parameters that we will use for printing. This will be useful for "printing out the variables' detail" 
-        self.print_par_naems = [ "K", "B", "q0" ]
+        # The number of movements 
+        self.n_mov = 0 
 
-    def set_traj( self, mov_pars: dict, basis_func: str = "min_jerk_traj" ):
-        self.x0i = mov_pars[ "q0i" ]
-        self.x0f = mov_pars[ "q0f" ]
-        self.D   = mov_pars[  "D"  ]
+        # If save data, then 
+        if self.is_save_data:
+            Ns = int( mj_args.run_time * mj_args.print_freq ) + 1
+
+            # The time array 
+            self.t_arr = np.zeros( Ns )
+
+            # The Torque input array
+            self.tau_arr = np.zeros( ( 7, Ns ) )            
+    
+            # The current q and dq of the joints
+            self.q_arr  = np.zeros( ( 7, Ns ) )            
+            self.dq_arr = np.zeros( ( 7, Ns ) )           
+            
+            # The x0 and dx0
+            self.x0_arr  = np.zeros( ( 3, Ns ) )            
+            self.dx0_arr = np.zeros( ( 3, Ns ) )           
+
+            # The Jacobian matrix of the end-effector
+            self.Jp_arr = np.zeros( ( 3, 7, Ns ) )
+            self.Jr_arr = np.zeros( ( 3, 7, Ns ) )
+
+            # The index for saving the data
+            self.idx_data = 0                     
 
 
-        if   basis_func == "min_jerk_traj":
-            self.traj_pos = lambda t :      self.x0i + ( self.x0f - self.x0i ) * (  10 * ( t / self.D ) ** 3 - 15 * ( t / self.D ) ** 4 +  6 * ( t / self.D ) ** 5 )
-            self.traj_vel = lambda t :  1.0 / self.D * ( self.x0i - self.x0i ) * (  30 * ( t / self.D ) ** 2 - 60 * ( t / self.D ) ** 3 + 30 * ( t / self.D ) ** 4 )
+    def set_impedance( self, Kx: np.ndarray, Bx: np.ndarray ):
 
-        elif basis_func == "b_spline":
-            pass
+        # Check whether it is a 3-by-3 array
+        assert len( Kx      ) == 3 and len( Bx      ) == 3
+        assert len( Kx[ 0 ] ) == 3 and len( Bx[ 0 ] ) == 3
+        
+        # Setting up the Kx, Bx matrices
+        self.Kx = Kx
+        self.Bx = Bx
 
-    def input_calc( self, t:float ):
-        # The following two trajectories  should not be "None"
-        assert self.traj_pos and self.traj_vel
+    def add_movement( self, x0i: np.ndarray, x0f:np.ndarray, D:float, ti:float ):
 
-        # Get the current angular position and velocity of the robot 
-        q  = self.mj_data.qpos[ 0 : self.n_act ]       
-        dq = self.mj_data.qvel[ 0 : self.n_act ]
+        assert len( x0i ) == 3
+        assert len( x0f ) == 3
+
+        assert D > 0 and ti >= 0
+
+        self.x0i.append( x0i )
+        self.x0f.append( x0f )
+        self.D.append(     D )
+        self.ti.append(   ti )     
+
+        self.n_mov += 1   
+
+
+    def save_data( self, dir_name ):
+        """
+            Saving the data as a .mat file
+        """        
+        NotImplementedError( )
+
+    def input_calc( self, t ):
+        """
+            Descriptions
+            ------------
+                We implement the controller. 
+                The controller generates torque with the following equation 
+
+                tau = K( q0 - q ) + B( dq0 - dq ) 
+
+                (d)q0: The zero-torque trajectory, which follows a minimum-jerk profile. 
+                 (d)q: current angular position (velocity) of the robot
+
+            Arguments
+            ---------
+                t: The current time of the simulation. 
+        """
+
+        # Iterating through the movement 
+        self.x  = self.get_end_effector_pos( )
+        self.dx = self.get_end_effector_lin_vel( )
+
+
+        # The Zero torque trajectory 
+        self.x0  = np.zeros( 3 )
+        self.dx0 = np.zeros( 3 )
+
+        # The jacobian
+        self.Jp = self.get_end_effector_lin_jacobian( )
+
+        # Setting up the zero-torque trajectory
+        for i in range( self.n_mov ):
+            for j in range( 3 ):
+                tmp_x0, tmp_dx0 = min_jerk_traj( t, self.ti[ i ], self.ti[ i ] + self.D[ i ], self.x0i[ i ][ j ], self.x0f[ i ][ j ], self.D[ i ] )
+
+                self.x0[ j ]  += tmp_x0 
+                self.dx0[ j ] += tmp_dx0
+
+        self.tau = self.Jp.T @ ( self.Kx @ ( self.x0 - self.x ) + self.Bx @ ( self.dx0 - self.dx ) )
  
-        if    t < self.t_start:
-            self.q0  = self.q0i 
-            self.dq0 = np.zeros( self.n_act )
+        return self.tau
 
-        elif  self.t_start < t <= self.t_start + self.D:
-            self.q0  = self.traj_pos( t - self.t_start )
-            self.dq0 = self.traj_vel( t - self.t_start )
-        else:
-            self.q0  = self.q0f
-            self.dq0 = np.zeros( self.n_act )
+    def save_data( self ):
+        NotImplementedError( )
 
-        tau_imp = np.dot( self.K, self.q0 - q ) + np.dot( self.B, self.dq0 - dq )
+    def reset( self ):
+        """
+            Initialize all variables  
+        """
 
-        self.tau  = tau_imp 
+        self.Kx, self.Bx = [], []
+        self.x0i, self.x0f, self.D, self.ti = [], [], [], [] 
 
-        # The  (1) object         (2) index array          (3) It's value. 
-        return self.mj_data.ctrl, np.arange( self.n_act ), self.tau
+        self.n_act = 0 
 
     def reset( self ):
         NotImplementedError( )

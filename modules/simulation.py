@@ -50,7 +50,15 @@ class Simulation:
         self.t   = 0
         self.dt  = self.mj_model.opt.timestep   
         self.ts  = self.args.start_time                                              
-        self.T   = self.args.run_time           
+        self.T   = self.args.run_time      
+
+        # The actuator index
+        self.idx_acts = { "right": np.array( [ self.mj_model.actuator_name2id( j ) for j in C.ACT_NAMES[ "right" ] ] ) ,
+                           "left": np.array( [ self.mj_model.actuator_name2id( j ) for j in C.ACT_NAMES[  "left" ] ] )  }
+
+        # The joint indexs
+        self.idx_joints = { "right": np.array( [ self.mj_model.joint_name2id( j ) for j in C.JOINT_NAMES[ "right" ] ] ) ,
+                             "left": np.array( [ self.mj_model.joint_name2id( j ) for j in C.JOINT_NAMES[  "left" ] ] )  }                           
         
         self.n_steps = 0            
 
@@ -81,12 +89,10 @@ class Simulation:
         
         assert len( qpos ) == 7 and len( qvel ) == 7 
 
-        # If the array is shorter than the actual self.nq in the model, just fill it with zero 
-        idx_joint = np.array( [ self.mj_model.joint_name2id( j ) for j in C.JOINT_NAMES[ which_arm ] ] )
+        idx = self.idx_joints[ which_arm ]
 
-
-        self.mj_data.qpos[ idx_joint ] = qpos
-        self.mj_data.qvel[ idx_joint ] = qvel
+        self.mj_data.qpos[ idx ] = qpos
+        self.mj_data.qvel[ idx ] = qvel
 
         # Forward the simulation to update the posture 
         self.mj_sim.forward( )
@@ -193,10 +199,16 @@ class Simulation:
             # input_ref: The data array that are aimed to be inputted (e.g., qpos, qvel, qctrl etc.)
             # input_idx: The specific index of input_ref data array that should be inputted
             # input:     The actual input value which is inputted to input_ref
-            if self.imps is not None: 
+            if self.imps is not None:
+                tau_input = { "right" : np.zeros( 7 ), "left" : np.zeros( 7 ) } 
+                
                 for imp in self.imps:
-                    input_ref, input_idx, input = imp.input_calc( self.t )
-                    input_ref[ input_idx ] = input
+                
+                    tmp_tau = imp.input_calc( self.t )
+                    tau_input[ imp.which_arm ] += tmp_tau
+
+            for limb_name in [ "right", "left" ]: 
+                self.mj_data.ctrl[ self.idx_acts[ limb_name ] ] = tau_input[ limb_name ]
 
             # Run a single simulation 
             self.step( )

@@ -32,7 +32,7 @@ class Constants:
     
     LEFT_ACT_NAMES  = [  "motor_" + joint_name for joint_name in LEFT_JOINT_NAMES ]
     RIGHT_ACT_NAMES = [  "motor_" + joint_name for joint_name in RIGHT_JOINT_NAMES ]    
-    
+
     ACT_NAMES   = { "left": LEFT_ACT_NAMES, "right": RIGHT_ACT_NAMES }
 
     RIGHT2LEFT = { right_name:  left_name for right_name,  left_name in zip( RIGHT_JOINT_NAMES,  LEFT_JOINT_NAMES ) }
@@ -58,3 +58,12 @@ class Constants:
                     'right_w0' : -0.0464029188,
                     'right_w1' : -0.759660457, 
                     'right_w2' : -1.5823011827     }
+
+    # Posture that is higher than expected
+    GRASP_POSE_UP = {   'right_s0' : 0.6051554208,
+                        'right_s1' : -0.1487961364,
+                        'right_e0' : 0.1376747757,
+                        'right_e1' : 1.3767477571,
+                        'right_w0' : -0.0441019477,
+                        'right_w1' : -1.3341797903,
+                        'right_w2' : -1.7096215881 }

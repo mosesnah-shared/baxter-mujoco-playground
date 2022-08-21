@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 sys.path.append( os.path.join( os.path.dirname(__file__), "modules" ) )
 
 from simulation   import Simulation
-from controllers  import JointImpedanceController
+from controllers  import JointImpedanceController, CartesianPositionImpedanceController
 from constants    import Constants  as C
 from utils        import *
 
@@ -53,18 +53,6 @@ parser.add_argument( '--vid_off'     , action = 'store_true'  ,                 
 # [REF] https://stackoverflow.com/questions/48796169/how-to-fix-ipykernel-launcher-py-error-unrecognized-arguments-in-jupyter
 args, unknown = parser.parse_known_args( )
 
-def run_single_trial( mj_sim ):
-    """
-        A function for running a single trial of simulation and return an array of the objective value of the simulation. 
-    """
-
-    mj_sim.initialize( which_arm = "right", qpos = dict2arr( "right", C.GRASP_POSE ), qvel = np.zeros( 7 ) )
-
-    # mj_sim.initialize( which_arm = "left", qpos = C.GRASP_POSE, qvel = np.zeros( 7 ) )
-
-    # Run the simulation
-    mj_sim.run( )
-
 
 if __name__ == "__main__":
 
@@ -78,13 +66,26 @@ if __name__ == "__main__":
         # The RIGHT LIMB Impedances
         imp1_R = JointImpedanceController( my_sim, args, which_arm = "right" )
         
-        Kq_mat = 10 * np.eye( 7 )
-        Bq_mat = 0.6 * Kq_mat
+        Kq_mat = 0 * np.eye( 7 )
+        Bq_mat = 0.6 * np.eye( 7 )
         
         imp1_R.set_impedance( Kq = Kq_mat, Bq = Bq_mat )
-        imp1_R.add_movement( q0i = dict2arr( "right", C.GRASP_POSE ), q0f = dict2arr( "right", C.MID_POSE ), D = 3, ti = 1.0 )        
+        imp1_R.add_movement( q0i = dict2arr( "right", C.GRASP_POSE_UP ), q0f = dict2arr( "right", C.GRASP_POSE_UP ), D = 3, ti = 1.0 )        
 
         my_sim.add_ctrl( imp1_R )
+
+        my_sim.initialize( which_arm = "right", qpos = dict2arr( "right", C.GRASP_POSE_UP ), qvel = np.zeros( 7 ) )
+
+        # The position impedance controller
+        imp2_R = CartesianPositionImpedanceController( my_sim, args, which_arm = "right" )
+
+        Kx_mat = 10.0 * np.eye( 3 )
+        Bx_mat = 0.4 * Kx_mat
+        imp2_R.set_impedance( Kx = Kx_mat, Bx = Bx_mat )
+
+        imp2_R.add_movement( x0i = imp2_R.get_end_effector_pos( ), x0f = imp2_R.get_end_effector_pos( ) + np.array( [ 0, -0.4, 0. ] ), D = 4, ti = 1.0 )        
+
+        my_sim.add_ctrl( imp2_R )
 
     elif args.ctrl_name == "task_imp_ctrl":
         pass
@@ -92,7 +93,7 @@ if __name__ == "__main__":
     else:
         raise ValueError( f"[ERROR] Wrong controller name" )
 
-    run_single_trial( my_sim )
+    my_sim.run( )
     
     my_sim.close( )
 
