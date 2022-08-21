@@ -1,6 +1,5 @@
 import numpy  as np
 from   modules.utils     import *
-from   modules.MLmodule  import *
 from   modules.constants import Constants as C
 
 class Controller:

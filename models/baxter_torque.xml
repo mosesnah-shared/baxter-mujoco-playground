@@ -210,6 +210,7 @@
                                                         <!--<body name="right_gripper" pos="0 0 0.1327">
                                                             <inertial pos="0 0 0" mass="0.0001" diaginertia="0 0 0" />
                                                         </body>-->
+                                                        <site name='right_gripper_end_site' pos="0 0 0.025">
 
                                                         <body name="r_gripper_l_finger" pos="0 -0.0015 0.02">
 
@@ -314,9 +315,8 @@
                                                         <inertial pos="0 0 0" quat="-0.5 0.5 0.5 0.5" mass="0.3" diaginertia="3e-08 2e-08 2e-08" />
                                                         <geom quat="0 0 0.707107 0.707107" class="viz" mesh="electric_gripper_base" />
                                                         <geom size="0.029 0.05" quat="0 0 0.707107 0.707107" type="cylinder" />
-                                                        <!--<body name="left_gripper" pos="0 0 0.1327">
-                                                            <inertial pos="0 0 0" mass="0.0001" diaginertia="0 0 0" />
-                                                        </body>-->
+                                                        <site name='left_gripper_end_site' pos="0 0 0.025">
+                                                        
                                                         <body name="l_gripper_l_finger" pos="0 -0.0015 0.02">
 
                                                             <inertial pos="0 0 0" quat="0 0 0 -1" mass="0.02" diaginertia="0.01 0.01 0.01" />
