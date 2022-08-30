@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 sys.path.append( os.path.join( os.path.dirname(__file__), "modules" ) )
 
 from simulation   import Simulation
-from controllers  import JointImpedanceController, CartesianPositionImpedanceController
+from controllers  import JointImpedanceController, CartesianPositionImpedanceController, SphereController
 from constants    import Constants  as C
 from utils        import *
 
@@ -86,14 +86,21 @@ if __name__ == "__main__":
         imp2_R.add_movement( x0i = imp2_R.get_end_effector_pos( ), x0f = imp2_R.get_end_effector_pos( ) + np.array( [ 0, -0.4, 0. ] ), D = 4, ti = 1.0 )        
 
         my_sim.add_ctrl( imp2_R )
+        
+        my_sim.run( )
 
     elif args.ctrl_name == "task_imp_ctrl":
         pass
 
+    elif args.ctrl_name == "sphere_ctrl":
+        ctrl = SphereController( my_sim, args )
+ 
+        ctrl.set_initial_orientation( np.array( [ .3, .2, .5 ] ) )
+
     else:
         raise ValueError( f"[ERROR] Wrong controller name" )
 
-    my_sim.run( )
+
     
     my_sim.close( )
 

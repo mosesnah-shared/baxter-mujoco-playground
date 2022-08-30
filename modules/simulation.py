@@ -53,12 +53,13 @@ class Simulation:
         self.T   = self.args.run_time      
 
         # The actuator index
-        self.idx_acts = { "right": np.array( [ self.mj_model.actuator_name2id( j ) for j in C.ACT_NAMES[ "right" ] ] ) ,
-                           "left": np.array( [ self.mj_model.actuator_name2id( j ) for j in C.ACT_NAMES[  "left" ] ] )  }
+        if "baxter" in self.args.model_name:
+            self.idx_acts = { "right": np.array( [ self.mj_model.actuator_name2id( j ) for j in C.ACT_NAMES[ "right" ] ] ) ,
+                               "left": np.array( [ self.mj_model.actuator_name2id( j ) for j in C.ACT_NAMES[  "left" ] ] )  }
 
-        # The joint indexs
-        self.idx_joints = { "right": np.array( [ self.mj_model.joint_name2id( j ) for j in C.JOINT_NAMES[ "right" ] ] ) ,
-                             "left": np.array( [ self.mj_model.joint_name2id( j ) for j in C.JOINT_NAMES[  "left" ] ] )  }                           
+            # The joint indexs
+            self.idx_joints = { "right": np.array( [ self.mj_model.joint_name2id( j ) for j in C.JOINT_NAMES[ "right" ] ] ) ,
+                                 "left": np.array( [ self.mj_model.joint_name2id( j ) for j in C.JOINT_NAMES[  "left" ] ] )  }                           
         
         self.n_steps = 0            
 
@@ -193,7 +194,6 @@ class Simulation:
                 # If SPACE BUTTON is pressed
                 if self.mj_viewer.is_paused:    continue
 
-            
 
             # [Calculate Input]
             # input_ref: The data array that are aimed to be inputted (e.g., qpos, qvel, qctrl etc.)

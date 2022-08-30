@@ -360,3 +360,67 @@ class CartesianPositionImpedanceController( Controller ):
 
     def reset( self ):
         NotImplementedError( )
+
+class SphereController:
+
+    def __init__( self, mj_sim, args ): 
+
+        # Saving the reference of mujoco model and data for 
+        self.mj_sim   = mj_sim
+        self.mj_model = mj_sim.mj_model
+        self.mj_data  = mj_sim.mj_data
+
+        # Saving the arguments passed via ArgumentParsers
+        self.mj_args  = args
+
+    def set_initial_orientation( self, q_init: np.ndarray ):
+        """
+            Set random initial orientation.
+        """
+        assert len( q_init ) == 3
+
+        self.mj_data.qpos[ : ] = q_init[ : ]
+
+        self.mj_sim.mj_sim.forward( )
+
+
+    def set_desired_orientation( self, o_des ):
+        """
+            The desired orientation in R matrix form 
+        """
+
+        # Assert 
+
+        self.o_des = o_des
+
+    def input_calc( self ):
+        """
+            Setting the desired orientation of the robot 
+        """
+
+        # Get the current angular position and velocity of the robot 
+        q  = self.mj_data.qpos[ : ]       
+        dq = self.mj_data.qvel[ : ]
+
+        # 
+ 
+
+        # The  (1) object         (2) index array          (3) It's value. 
+        return self.mj_data.ctrl, np.arange( self.n_act ), np.zeros( 3 )
+
+    def save_data( self, dir_name ):
+        """
+            Save the controller details as a mat file
+        """
+        
+        file_name = dir_name + "/ctrl.mat"
+        
+        NotImplementedError( )
+                
+    def reset( self ):
+        """
+            Initialize all variables  
+        """
+        NotImplementedError( )
+
+
